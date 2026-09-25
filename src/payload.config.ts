@@ -4,9 +4,19 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
+import { s3Storage } from '@payloadcms/storage-s3'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { Cars } from './collections/Cars'
+import { Rentals } from './collections/Rentals'
+import { Pages } from './collections/Pages'
+import { News } from './collections/News'
+import { CarsPage } from './globals/CarsPage'
+import { HomePage } from './globals/HomePage'
+import { Footer } from './globals/Footer'
+import { NewsPage } from './globals/NewsPage'
+import { ContactPage } from './globals/ContactPage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -18,7 +28,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [Users, Media, Cars, Rentals, Pages, News],
+  globals: [CarsPage, HomePage, Footer, NewsPage, ContactPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -30,5 +41,28 @@ export default buildConfig({
     },
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    s3Storage({
+      collections: {
+        media: {
+          generateFileURL: ({ filename, prefix }) => {
+            const endpoint = process.env.S3_ENDPOINT as string
+            const publicUrl = endpoint.replace('/s3', `/object/public/${process.env.S3_BUCKET}`)
+
+            return `${publicUrl}/${filename}`
+          },
+        },
+      },
+      bucket: process.env.S3_BUCKET as string,
+      config: {
+        endpoint: process.env.S3_ENDPOINT as string,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID as string,
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY as string,
+        },
+        region: process.env.S3_REGION as string,
+        forcePathStyle: true,
+      },
+    }),
+  ],
 })

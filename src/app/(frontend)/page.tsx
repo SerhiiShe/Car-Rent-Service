@@ -1,59 +1,33 @@
-import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
 import { getPayload } from 'payload'
-import React from 'react'
-import { fileURLToPath } from 'url'
+import config from '@payload-config'
+import RenderBlocks from '@/components/blocks/RenderBlocks'
 
-import config from '@/payload.config'
-import './styles.css'
+export const dynamic = 'force-dynamic'
 
-export default async function HomePage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+export default async function HomePageRoute() {
+  const payload = await getPayload({ config })
 
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
+  const homePage = await payload.findGlobal({
+    slug: 'home-page',
+    depth: 2,
+  })
 
-  return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
+  if (!homePage || !homePage.layout || homePage.layout.length === 0) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="bg-gray-50 p-10 text-center rounded-xl border">
+          <p className="text-xl font-medium text-gray-700">The Home Page is empty.</p>
+          <p className="text-gray-500 mt-2">
+            Go to Payload Admin &rarr; Globals &rarr; Home Page to add blocks.
+          </p>
         </div>
       </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.tsx</code>
-        </a>
-      </div>
+    )
+  }
+
+  return (
+    <div className="pb-20">
+      <RenderBlocks layout={homePage.layout} />
     </div>
   )
 }
